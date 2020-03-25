@@ -34,9 +34,12 @@ packages <- c(
   'patchwork',
   'ggraph',
   'dplyr',
+  'patchwork',
   'gganimate',
   'gifski',
+  'ggrepel',
   'ggforce',
+  'ggraph',
   'ggthemes',
   'maps',
   'sf',
@@ -65,11 +68,12 @@ National Park.
 ```{r}
 data("faithful")
 # Basic scatterplot
-ggplot(data = faithful, 
-       mapping = aes(x = eruptions, y = waiting)) + 
+ggplot(data = faithful, # data is global to ggplot (also mapping)
+       mapping = aes(x = eruptions, 
+                     y = waiting)) + 
   geom_point()
 # Data and mapping can be given both as global (in ggplot()) or per layer
-ggplot() + 
+ggplot() + # DATA is not global to ggplot
   geom_point(mapping = aes(x = eruptions, y = waiting),
              data = faithful)
 ```
@@ -112,7 +116,7 @@ See `?geom_point` for more information on the point layer.
 
 ```{r}
 ggplot(faithful) + 
-  geom_point(aes(x = eruptions, y = waiting))
+  geom_point(aes(x = eruptions, y = waiting),shape="square",alpha=0.5)
 ```
 
 Hint 1: transparency is controlled with `alpha`, and shape with `shape`
@@ -124,7 +128,7 @@ Colour the two distributions in the histogram with different colours
 
 ```{r}
 ggplot(faithful) + 
-  geom_histogram(aes(x = eruptions))
+  geom_histogram(aes(x = eruptions,fill=eruptions<3))
 ```
 
 Hint 1: For polygons you can map two different colour-like aesthetics: `colour` 
@@ -137,7 +141,7 @@ Colour the distributions in the histogram by whether `waiting` is above or below
 
 ```{r}
 ggplot(faithful) + 
-  geom_histogram(aes(x = eruptions))
+  geom_histogram(aes(x = eruptions,fill=waiting<60),position='identity',alpha=0.3)
 ```
 
 Change the plot above by setting `position = 'dodge'` in `geom_histogram()` 
@@ -150,7 +154,7 @@ how to draw straight lines from a slope and intercept.
 
 ```{r}
 ggplot(faithful) + 
-  geom_point(aes(x = eruptions, y = waiting))
+  geom_point(aes(x = eruptions, y = waiting))+geom_abline(slope=-40, intercept=200)
 ```
 
 ### Stat
@@ -218,6 +222,10 @@ stat it uses as default. Then modify the code to use the stat directly instead
 ```{r}
 ggplot(mpg) + 
   geom_bar(aes(x = class))
+
+ggplot(mpg) + 
+  stat_count(aes(x = class))
+
 ```
 
 * * *
@@ -226,7 +234,7 @@ Use `stat_summary()` to add a red dot at the mean `hwy` for each group
 
 ```{r}
 ggplot(mpg) + 
-  geom_jitter(aes(x = class, y = hwy), width = 0.2)
+  geom_jitter(aes(x = class, y = hwy), width = 0.2)+stat_summary(aes(x=class,y=hwy),fun = mean,geom="point",color='red',size=5)
 ```
 
 Hint: You will need to change the default geom of `stat_summary()`
@@ -266,6 +274,14 @@ Color Brewer and pick your favourite. Modify the code below to use it
 ggplot(mpg) + 
   geom_point(aes(x = displ, y = hwy, colour = class)) + 
   scale_colour_brewer(type = 'qual')
+
+RColorBrewer::display.brewer.all()
+
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy, colour = class)) + 
+  scale_colour_brewer(palette  = 'Set1')
+
+
 ```
 
 * * *
@@ -294,10 +310,10 @@ variable, but to the continuous `cty` variable. What happens to the guide?
 
 ```{r}
 ggplot(mpg) + 
-  geom_point(aes(x = displ, y = hwy, colour = class, size = cty))
+  geom_point(aes(x = displ, y = hwy, colour = cty,size=cty))
 ```
 
-* * *
+  * * *
 
 The type of guide can be controlled with the `guide` argument in the scale, or 
 with the `guides()` function. Continuous colours have a gradient colour bar by 
@@ -307,7 +323,7 @@ guide type?
 
 ```{r}
 ggplot(mpg) + 
-  geom_point(aes(x = displ, y = hwy, colour = cty, size = cty))
+  geom_point(aes(x = displ, y = hwy, colour = cty, size = cty))+guides(colour='legend')
 ```
 
 ### Facets
@@ -322,6 +338,8 @@ ggplot(mpg) +
 ```
 
 ```{r}
+mpg %>% group_by(drv) %>% summarise( count = n())
+
 ggplot(mpg) + 
   geom_point(aes(x = displ, y = hwy)) + 
   facet_grid(year ~ drv)
@@ -337,6 +355,22 @@ settings in the plot below:
 ggplot(mpg) + 
   geom_point(aes(x = displ, y = hwy)) + 
   facet_wrap(~ drv)
+
+
+#solutions
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  facet_wrap(~ drv,scales = "free_x")
+
+
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  facet_wrap(~ drv,scales = "free_y")
+
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  facet_wrap(~ drv,scales ="free")
+
 ```
 
 * * *
@@ -349,6 +383,11 @@ between the panels in the plot. What happens?
 ggplot(mpg) + 
   geom_bar(aes(y = manufacturer)) + 
   facet_grid(class ~ .)
+
+#solution
+ggplot(mpg) + 
+  geom_bar(aes(y = manufacturer)) + 
+  facet_grid(class ~ .,scales="free",space = "free")
 ```
 
 Use the `space` argument in `facet_grid()` to change the plot above so each bar 
@@ -362,9 +401,16 @@ recreate the same panels present in the plot below by using `facet_wrap()`
 ```{r}
 ggplot(mpg) + 
   geom_point(aes(x = displ, y = hwy)) + 
-  facet_grid(year ~ drv)
+  facet_grid(year ~ drv) 
 ```
+```{r}
+# solution
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+    facet_wrap(facets = c("drv","year")) 
 
+```
+  
 ### Coordinates
 The coordinate system is the fabric you draw your layers on in the end. The 
 default `coord_cartesion provides the standard rectangular x-y coordinate 
@@ -408,6 +454,15 @@ and then using `coord_trans()`. Compare the results — how do they differ?
 ```{r}
 ggplot(mpg) + 
   geom_point(aes(x = hwy, y = displ))
+
+#solution 1
+ggplot(mpg) + 
+  geom_point(aes(x = hwy, y = displ))+scale_y_continuous(trans="log")
+
+#solution 2
+ggplot(mpg) + 
+  geom_point(aes(x = hwy, y = displ))+coord_trans(y = "log")
+
 ```
 
 * * *
@@ -428,6 +483,13 @@ world <- sf::st_wrap_dateline(world,
 ggplot(world) + 
   geom_sf() + 
   coord_sf(crs = "+proj=moll")
+
+# solution
+ggplot(world) + 
+  geom_sf() + 
+  coord_sf(crs = "+proj=robin")
+
+
 ```
 
 Maps are a huge area in data visualisation and simply too big to cover in this 
