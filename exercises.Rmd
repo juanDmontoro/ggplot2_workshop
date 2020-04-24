@@ -602,7 +602,7 @@ the middle plot takes up half of the total space:
 ```{r}
 p <- ggplot(mtcars) + 
   geom_point(aes(x = disp, y = mpg))
-p + p + p
+p + p + p +plot_layout(widths=c(1,2,1))
 ```
 
 * * *
@@ -615,7 +615,8 @@ p1 <- ggplot(mtcars[mtcars$gear == 3,]) +
   geom_point(aes(x = disp, y = mpg))
 p2 <- ggplot(mtcars[mtcars$gear == 4,]) + 
   geom_point(aes(x = disp, y = mpg))
-p1 + p2
+p1 + p2 &   scale_y_continuous(limits = c(0, 40))
+
 ```
 
 * * *
@@ -639,6 +640,13 @@ AA#
 C##
 '
 p1 + p2 + p3 + plot_layout(design = layout)
+
+layout2 <-'AAA
+            #BB
+            CC#'
+
+p1 + p2 + p3 + plot_layout(design = layout2)
+
 ```
 
 ### Animation
@@ -714,7 +722,7 @@ mpg2 <- tidyr::pivot_longer(mpg, c(cty,hwy))
 ggplot(mpg2) + 
   geom_point(aes(x = displ, y = value)) + 
   ggtitle("{if (closest_state == 'cty') 'Efficiency in city' else 'Efficiency on highway'}") + 
-  transition_states(name)
+  transition_states(name) + ease_aes(y='cubic-in-out')
 ```
 
 ### Annotation
@@ -776,7 +784,7 @@ mtcars2$label <- ""
 mtcars2$label[1:10] <- rownames(mtcars2)[1:10]
 ggplot(mtcars2, aes(x = disp, y = mpg)) + 
   geom_point() + 
-  geom_text_repel(aes(label = label))
+  geom_text_repel(aes(label = label),direction = 'y')
 ```
 
 * * *
@@ -789,7 +797,34 @@ ggplot(mtcars, aes(x = disp, y = mpg)) +
   geom_point() + 
   geom_mark_ellipse(aes(filter = gear == 4,
                         label = '4 gear cars'))
+
+ggplot(mtcars, aes(x = disp, y = mpg)) +
+  geom_point() + 
+  geom_mark_rect(aes(filter = gear == 4,
+                        label = '4 gear cars'))
+
+ggplot(mtcars, aes(x = disp, y = mpg)) +
+  geom_point() + 
+  geom_mark_circle(aes(filter = gear == 4,
+                        label = '4 gear cars'))
+
+
+library(concaveman)
+ggplot(mtcars, aes(x = disp, y = mpg)) +
+  geom_point() + 
+  geom_mark_hull(aes(filter = gear == 4,
+                        label = '4 gear cars'))
+
+library(concaveman)
+ggplot(mtcars, aes(x = disp, y = mpg)) +
+  geom_point() + 
+  geom_mark_hull(aes(fill=factor(gear)))
+
+
 ```
+### gghighlight
+
+**A package to highlight specific opints/areas of a plot. Combined with ggforce can help to direct the eye of the viewer**
 
 ### Networks
 ggplot2 has been focused on tabular data. Network data in any shape and form is
@@ -839,8 +874,23 @@ in the graph below to show the presence of multiple edges
 ```{r}
 highschool_gr <- as_tbl_graph(highschool)
 ggraph(highschool_gr) + 
-  geom_edge_link() + 
+  geom_edge_parallel() + 
   geom_node_point()
+
+ggraph(highschool_gr) + 
+  geom_edge_bend() + 
+  geom_node_point()
+
+ggraph(highschool_gr) + 
+  geom_edge_fan() + 
+  geom_node_point()
+
+ggraph(highschool_gr) + 
+  geom_edge_fan() + 
+  geom_node_point()+
+  facet_edges(~year)
+
+
 ```
 
 Faceting works in ggraph as it does in ggplot2, but you must choose to facet by
